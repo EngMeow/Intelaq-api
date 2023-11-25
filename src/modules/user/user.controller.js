@@ -13,12 +13,20 @@ import {
 // create User Profile 
   
 async function createUserProfile(user_id, model,userRole) {
-  const employerObj = await UserModel.findById(user_id);
+  const UserObj = await UserModel.findById(user_id);
   const profile = new model({
-      profile: employerObj,
+      profile: UserObj,
   });
   
    await profile.save();
+   const updateObject = {};
+  updateObject[userRole] = profile._id;
+
+  const updatedProfile = await UserModel.findOneAndUpdate(
+    { _id: user_id },
+    { $set: updateObject },
+    { new: true }
+  );
 
   if (!profile) {
     throw new CustomError(`${model} not created`, 400);
@@ -29,9 +37,7 @@ async function createUserProfile(user_id, model,userRole) {
 
 const allUsers = tryCatch(async (req, res) => {
 
-  const users = await UserModel.find()
-    .select('id name email nationalID phone role')
-    .exec();
+  const users = await UserModel.find({},{ id:true ,name: true, email: true, nationalID: true, phone: true, role: true })
 
   if (!users) throw new NotFoundError('Users not found', 404);
   res.status(200).json(users);

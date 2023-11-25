@@ -34,12 +34,11 @@ const getAllEntities = async (req, res, model) => {
   return entities;
 };
 
-
 const getEntityById = async (req, res, model) => {
   const entity = await model.findById(req.params.id)
   .populate('profile')
   if(entity.profile.role == 'employee'){
-    entity.populate('assignedApplications')
+    entity.populate('assignedApplications');
   }
   if(entity.profile.role == 'employer'){
     entity.populate('createdJobs');

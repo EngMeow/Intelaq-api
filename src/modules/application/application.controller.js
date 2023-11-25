@@ -10,7 +10,9 @@ const createApplication = async (req, res) => {
     const employeeObj = await UserModel.findById(req.user.id ,
       { name: true, email: true, nationalID: true, phone: true, role: true })
   
-    const JobObj = await JobModel.findById(id);
+    const JobObj = await JobModel.findById(id , {
+      title:true, jobDescription:true, location:true, programmingLanguages:true, experienceLevel:true,
+    });
 
     // Create a new Application and assign the employer
     const newApplication = new ApplicationModel({
@@ -32,6 +34,37 @@ const getApplicationes = async (req, res) => {
   if (req.query.title) {
     filter.title = { $regex: req.query.title, $options: 'i' };
   }
+  
+  try {
+    const Applicationes = await ApplicationModel.find(filter)
+
+    res.status(200).json(Applicationes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'An error occurred while retrieving Applicationes.' });
+  }
+};
+
+// get my applicaitons ( not done yet )
+const getMyApplications = async (req, res) => {
+  let queryFilters = {};
+
+  if (req.user.role === "ADMIN") {
+    const adminId = req.user.admin.id;
+    queryFilters = {
+      createdBy: Number(adminId),
+    };
+  } else if (req.user.role === "employee" || req.user.role === "STUDENT") {
+    let userRoleKey = req.user.role.toLowerCase();
+    const userRoleId = req.user[userRoleKey].id;
+
+    queryFilters = {
+      [`${userRoleKey}.id`]: Number(userRoleId),
+    };
+  } else {
+    throw new InvalidRoleError("Invalid role.", 400);
+  }
+
 
   try {
     const Applicationes = await ApplicationModel.find(filter)
@@ -45,12 +78,11 @@ const getApplicationes = async (req, res) => {
   }
 };
 
-
 const getApplicationById = async (req, res) => {
   try {
     const Application = await ApplicationModel.findById(req.params.id)
     .populate('employee.profile', 'name email nationalID phone role')
-    .populate('job');
+    .populate('job' , 'title jobDescription location programmingLanguages experienceLevel');
 
     if (!Application) {
       return res.status(404).json({ message: 'Application not found.' });
@@ -99,7 +131,7 @@ const deleteApplication = async (req, res) => {
     }
   };
 
-  export { createApplication, getApplicationes,updateApplication, getApplicationById , deleteApplication};
+  export { createApplication, getApplicationes, getMyApplications ,updateApplication, getApplicationById , deleteApplication};
   
     
 

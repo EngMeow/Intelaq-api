@@ -10,7 +10,7 @@ const jobSchema = new Schema({
     experienceLevel: { type: String, enum: ExperienceLevelEnum },
     status: String,
     employer: { type: Schema.Types.Mixed, ref: 'Employer', required: true },
-    jobApplication: { type: Schema.Types.Mixed, ref: 'Application' },
+    jobApplication: [{ type: Schema.Types.Mixed, ref: 'Application' }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });

@@ -52,9 +52,9 @@ const registerUser = tryCatch(async (req, res) => {
     
     // Create user profile based on user role
     if (userRecord.role === 'employer') {
-      await createUserProfile(userRecord.id, EmployerModel);
+      await createUserProfile(userRecord.id, EmployerModel,userRecord.role);
     } else if (userRecord.role === 'employee' ) {
-      await createUserProfile(userRecord.id, EmployeeModel);
+      await createUserProfile(userRecord.id, EmployeeModel,userRecord.role);
     }
     const userResponse = formatUserResponse(userRecord);
     generateTokenAndSendCookie(res, userRecord._id);
