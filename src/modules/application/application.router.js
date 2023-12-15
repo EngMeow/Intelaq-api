@@ -1,6 +1,6 @@
 import express from "express";
 import { checkEmployee, checkEmployer, protect } from "../../middlewares/authMiddleware.js";
-import { createApplication, getApplicationes, getApplicationById, updateApplication , deleteApplication} from "./application.controller.js";
+import { createApplication ,getJobApplications, getApplicationById, updateApplication , deleteApplication} from "./application.controller.js";
 
 const applicationRouter = express.Router({ mergeParams: true });
 
@@ -8,7 +8,7 @@ const applicationRouter = express.Router({ mergeParams: true });
 applicationRouter
   .route("/")
   .post(protect, checkEmployee , createApplication)
-  .get(protect, getApplicationes)
+  .get(protect, getJobApplications)
 
 applicationRouter
   .route("/:id")

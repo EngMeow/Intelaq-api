@@ -1,16 +1,19 @@
+import mongoose from "mongoose";
 import { ApplicationModel } from "../../../databases/models/application.model.js";
 import { JobModel } from "../../../databases/models/job.model.js";
 import { UserModel } from "../../../databases/models/user.model.js";
+import { ObjectId } from "mongodb";
 
 const createApplication = async (req, res) => {
   try {
-    const id = req.params.id
-    console.log(req.params);
+    const jobId = req.params.id
     // Fetch the employer
     const employeeObj = await UserModel.findById(req.user.id ,
       { name: true, email: true, nationalID: true, phone: true, role: true })
   
-    const JobObj = await JobModel.findById(id , {
+    const JobObj = await JobModel.findById({
+      _id: jobId
+    },{
       title:true, jobDescription:true, location:true, programmingLanguages:true, experienceLevel:true,
     });
 
@@ -29,49 +32,45 @@ const createApplication = async (req, res) => {
   }
 };
 
-const getApplicationes = async (req, res) => {
+const getApplications = async (req, res) => {
   let filter = {};
   if (req.query.title) {
     filter.title = { $regex: req.query.title, $options: 'i' };
   }
-  
   try {
-    const Applicationes = await ApplicationModel.find(filter)
-
-    res.status(200).json(Applicationes);
+    const Applications = await ApplicationModel.find(filter)
+      .populate('job', 'title jobDescription location programmingLanguages experienceLevel');
+    res.status(200).json(Applications);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'An error occurred while retrieving Applicationes.' });
+    res.status(500).json({ message: 'An error occurred while retrieving Applications.' });
   }
 };
 
-// get my applicaitons ( not done yet )
-const getMyApplications = async (req, res) => {
-  let queryFilters = {};
-
-  if (req.user.role === "ADMIN") {
-    const adminId = req.user.admin.id;
-    queryFilters = {
-      createdBy: Number(adminId),
-    };
-  } else if (req.user.role === "employee" || req.user.role === "STUDENT") {
-    let userRoleKey = req.user.role.toLowerCase();
-    const userRoleId = req.user[userRoleKey].id;
-
-    queryFilters = {
-      [`${userRoleKey}.id`]: Number(userRoleId),
-    };
-  } else {
-    throw new InvalidRoleError("Invalid role.", 400);
+const getJobApplications = async (req, res) => {
+  
+  const jobId = req.params.id;
+  try {
+    const Applications = await ApplicationModel.find({ "job": jobId })
+      .populate('employee', 'name email nationalID phone role')
+      .populate('job', 'title jobDescription location programmingLanguages experienceLevel');
+    res.status(200).json(Applications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'An error occurred while retrieving Applications.' });
   }
+};
 
+const getMyApplications = async (req, res) => {
+  const employeeId = req.user._id;
 
   try {
-    const Applicationes = await ApplicationModel.find(filter)
-      .populate('employee.profile', 'name email nationalID phone role')
-      .populate('job');
+    const myApplications = await ApplicationModel.find({
+      "employee._id": employeeId})
+    .populate('employee.profile', 'name email nationalID phone role')
+    .populate('job', 'title jobDescription location programmingLanguages experienceLevel');
 
-    res.status(200).json(Applicationes);
+    res.status(200).json(myApplications);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'An error occurred while retrieving Applicationes.' });
@@ -114,6 +113,7 @@ const updateApplication = async (req, res) => {
     res.status(500).json({ message: 'An error occurred while updating the Application.' });
   }
 };
+
 const deleteApplication = async (req, res) => {
     const id = req.params.id;
   
@@ -129,9 +129,9 @@ const deleteApplication = async (req, res) => {
       console.error(err);
       res.status(500).json({ message: 'An error occurred while deleting the Application.' });
     }
-  };
+};
 
-  export { createApplication, getApplicationes, getMyApplications ,updateApplication, getApplicationById , deleteApplication};
+  export { createApplication, getApplications,getJobApplications, getMyApplications ,updateApplication, getApplicationById , deleteApplication};
   
     
 

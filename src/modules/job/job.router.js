@@ -1,6 +1,6 @@
 import express from "express";
 import { checkEmployer, protect } from "../../middlewares/authMiddleware.js";
-import { createJob, getJobes, getJobById , updatejob, deletejob, RecommendedJob } from "./job.controller.js";
+import { createJob, getJobes, getJobById , updatejob, deletejob, RecommendedJob, getMyJobs } from "./job.controller.js";
 import applicationRouter from "../application/application.router.js";
 
 const jobRouter = express.Router();
@@ -13,9 +13,10 @@ jobRouter
 jobRouter
   .route("/recommended")
   .get(protect, RecommendedJob)
-// Route for getting student or teacher classes
-// router.route("/my-jobs").get(protect, getStudentOrTeacherClasses);
 
+jobRouter
+  .route('/myJobs')
+  .get(protect, checkEmployer , getMyJobs)
 jobRouter
   .route("/:id")
   .get(protect, getJobById)
@@ -24,6 +25,5 @@ jobRouter
 
 jobRouter
   .use("/:id/apply",applicationRouter)
-// Routes for handling teachers and students in a class
 
 export default jobRouter;

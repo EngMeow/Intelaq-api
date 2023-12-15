@@ -6,13 +6,23 @@ import natural from 'natural';
 const tokenizer = new natural.WordTokenizer();
 
 const createJob = async (req, res) => {
+  let filter = {};
+  if (req.query.title) {
+    filter.title = { $regex: req.query.title, $options: 'i' };
+  }
   const { title, jobDescription, location, programmingLanguages, experienceLevel } = req.body;
 
   try {
     // Fetch the employer
     const employerObj = await UserModel.findById(req.user.id,
       { name: true, email: true, nationalID: true, phone: true, role: true });
-
+    
+      const appObj = await ApplicationModel.find({filter})
+      .populate({
+        path: '',
+        select: ['status']
+      })
+      
     // Create a new job and assign the employer
     const newJob = new JobModel({
       title,
@@ -21,6 +31,7 @@ const createJob = async (req, res) => {
       programmingLanguages,
       experienceLevel,
       employer: employerObj,
+      jobApplication: appObj
     });
     await newJob.save();
 
@@ -36,10 +47,9 @@ const getJobes = async (req, res) => {
   if (req.query.title) {
     filter.title = { $regex: req.query.title, $options: 'i' };
   }
-
   try {
     const Jobes = await JobModel.find(filter)
-      .populate('employer.profile', 'name email nationalID phone role')    
+      .populate('employer.profile', 'name email nationalID phone role')  
     res.status(200).json(Jobes);
   } catch (err) {
     console.error(err);
@@ -47,24 +57,38 @@ const getJobes = async (req, res) => {
   }
 };
 
-const getJobById = async (req, res) => {
-  let filter = {};
-  if (req.query.title) {
-    filter.title = { $regex: req.query.title, $options: 'i' };
-  }
-  try {
-    // Fetch the assigned applications on a specific job
-    const appObj = await ApplicationModel.find(filter);
-    const jobId = req.params.id;
+const getMyJobs = async (req, res) => {
+  const employerId = req.user._id;
 
-    // Update the job document by pushing the jobApplication array
-    const job = await JobModel.findByIdAndUpdate(
-      jobId,
-      { $push: { 'jobApplication': { $each: appObj } } },
-      { new: true }
-    )
+  try {
+    const myJobs = await JobModel.find({
+      "employer._id": employerId})
       .populate('employer.profile', 'name email nationalID phone role')
-      .populate('jobApplication');
+      .populate('jobApplication')
+
+    res.status(200).json(myJobs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'An error occurred while retrieving Jobes.' });
+  }
+};
+
+const getJobById = async (req, res) => {
+  
+  const jobId = req.params.id
+  console.log(jobId);
+  try {
+    const appObj = await ApplicationModel.find({
+      "job": jobId})
+    .populate('employee.profile', 'name email nationalID phone role')
+    .populate('job', 'title jobDescription location programmingLanguages experienceLevel');
+    // Fetch the assigned applications on a specific job
+    console.log(appObj);
+    // Update the job document by pushing the jobApplication array
+    const job = await JobModel.findByIdAndUpdate(jobId)
+      .populate('employer.profile', 'name email nationalID phone role')
+      .populate('jobApplication')
+
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found.' });
@@ -161,7 +185,7 @@ const RecommendedJob = async (req, res) => {
     }
 };
 
-export { createJob, getJobes, getJobById, updatejob, deletejob, RecommendedJob };
+export { createJob, getJobes, getJobById, updatejob, deletejob,getMyJobs, RecommendedJob };
   
     
 
